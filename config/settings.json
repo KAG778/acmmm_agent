@@ -1,0 +1,105 @@
+{
+  "system_name": "Multi-Agent Related Work Writer",
+  "version": "4.0.0",
+  "description": "Structured pipeline for writing high-quality Related Work sections with brainstorm-based requirements and per-task output isolation",
+
+  "agents": {
+    "brainstorm_agent": {
+      "role": "需求定义官",
+      "phase": 0,
+      "input": "User's raw input (text or draft file)",
+      "output": "UserRequirement (structured requirements for all downstream agents)"
+    },
+    "topic_specialist": {
+      "role": "主题定义官",
+      "phase": 1,
+      "input": "User's research draft/content",
+      "output": "Search Task Document (keywords, venues, time range)"
+    },
+    "search_agent": {
+      "role": "精准搜索员",
+      "phase": 2,
+      "input": "Search Task Document",
+      "output": "Candidate literature list (title, abstract, contribution, source)"
+    },
+    "archivist": {
+      "role": "文献档案员 (真理守门人)",
+      "phase": 3,
+      "input": "Literature list",
+      "output": "Structured literature archive with DOI/arXiv validation, abstract anchors, and status tagging",
+      "v3_rules": {
+        "metadata_force": "DOI (10.XXXX/...) or arXiv ID (YYMM.NNNNN) is MANDATORY",
+        "abstract_anchoring": "Extract 1-2 core sentences verbatim from original abstract as ONLY legal source",
+        "status_tags": ["verified", "unverified", "title_only"],
+        "rejection_criteria": ["no DOI", "no arXiv URL", "duplicate entry", "invalid DOI format"]
+      }
+    },
+    "synthesis_writer": {
+      "role": "合成撰写员",
+      "phase": 4,
+      "input": "Literature archive (only verified/unverified entries)",
+      "output": "Related Work draft (LaTeX)",
+      "constraint": "MUST use only Abstract Anchors as factual source material"
+    },
+    "fact_checker": {
+      "role": "审计校对员 (双重对账)",
+      "phase": 5,
+      "input": "Draft + Archive",
+      "output": "Audit report + Final corrected draft + dois_to_destroy list",
+      "v3_checks": {
+        "existence_check": "Validate DOI format (10.XXXX/...) and arXiv ID (YYMM.NNNNN); flag citation keys as fake DOIs",
+        "semantic_reconciliation": "Sentence-level comparison of draft claims vs Abstract Anchors",
+        "hallucination_detection": "Any claim not in Abstract Anchor → HALLUCINATION → force rewrite",
+        "destroy_notification": "Output dois_to_destroy list for Cleanup Agent to physically remove"
+      }
+    },
+    "cleanup_agent": {
+      "role": "环境清理官 (动态内存回收)",
+      "phase": 6,
+      "input": "Audit report + dois_to_destroy list",
+      "output": "Cleanup report + Fact Table (version locked)",
+      "v3_rules": {
+        "redundancy_pruning": "Delete stale drafts immediately after audit pass",
+        "physical_destruction": "Permanently remove records flagged by Auditor",
+        "version_locking": "Generate Fact Table as the ONLY legal source in Context window",
+        "destroy_logging": "Log all destructions to .destroy_log.json"
+      }
+    }
+  },
+
+  "audit_thresholds": {
+    "pass": "0 hallucinations, 0 errors",
+    "pass_with_notes": "0 hallucinations, some warnings",
+    "needs_revision": "0 hallucinations, some errors",
+    "must_rewrite": "any hallucinations detected"
+  },
+
+  "doi_validation": {
+    "patterns": {
+      "doi": "^10\\.\\d{4,9}/[^\\s]+$",
+      "arxiv_id": "^\\d{4}\\.\\d{4,6}$"
+    },
+    "reject_citation_keys": true
+  },
+
+  "default_settings": {
+    "year_range": [2022, 2025],
+    "target_venues": [
+      "ACM MM", "CVPR", "ICCV", "NeurIPS", "ICML", "ICLR",
+      "IEEE S&P", "USENIX Security", "CCS", "NDSS",
+      "AAAI", "IJCAI", "ACL", "EMNLP",
+      "IEEE TIFS", "IEEE TDSC", "IEEE TIP"
+    ],
+    "output_format": "latex",
+    "citation_style": "citep"
+  },
+
+  "workspace": {
+    "search_results": "workspace/search_results/",
+    "archives": "workspace/archives/",
+    "drafts": "workspace/drafts/",
+    "reports": "workspace/reports/",
+    "fact_table": "workspace/fact_table_latest.md",
+    "destroy_log": "workspace/.destroy_log.json"
+  }
+}

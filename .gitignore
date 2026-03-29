@@ -1,0 +1,18 @@
+# GPSG workspace
+.gpsg/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
